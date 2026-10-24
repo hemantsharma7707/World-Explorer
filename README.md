@@ -124,16 +124,6 @@ This application is completely static (single file `index.html`), making deploym
 
 ---
 
-## 📸 Screenshots
-
-*(Add screenshots of Browse View, Detail View with border chips, and Compare View after deployment)*
-
-| Browse View | Country Detail View | Compare View |
-| :---: | :---: | :---: |
-| ![Browse View](https://via.placeholder.com/400x250?text=Browse+View) | ![Detail View](https://via.placeholder.com/400x250?text=Detail+View) | ![Compare View](https://via.placeholder.com/400x250?text=Compare+View) |
-
----
-
 ## 👤 Author
 - **Hemant Sharma**
 - GitHub: [@hemantsharma7707](https://github.com/hemantsharma7707)
