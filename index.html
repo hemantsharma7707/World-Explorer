@@ -130,6 +130,25 @@
   <!-- ==================== MAIN CONTENT ==================== -->
   <main class="max-w-7xl mx-auto px-4 py-6">
     <section id="browseView">
+      <!-- Search & Filter Controls -->
+      <div class="flex flex-col sm:flex-row gap-3 mb-6">
+        <input type="text" id="searchInput" placeholder="🔍 Search countries..."
+          class="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+
+        <select id="regionFilter"
+          class="px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm cursor-pointer min-w-[150px]">
+          <option value="">All Regions</option>
+          <option value="Africa">Africa</option>
+          <option value="Americas">Americas</option>
+          <option value="Asia">Asia</option>
+          <option value="Europe">Europe</option>
+          <option value="Oceania">Oceania</option>
+        </select>
+      </div>
+
+      <!-- Result Count -->
+      <p id="resultCount" class="text-sm text-gray-500 mb-4 hidden"></p>
+
       <!-- Loading Skeletons -->
       <div id="loadingDiv" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 hidden"></div>
 
@@ -267,12 +286,39 @@
       grid.appendChild(fragment);
     }
 
+    function debounce(fn, delay) {
+      let timer;
+      return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    function applyFilters() {
+      const search = document.getElementById('searchInput').value.trim().toLowerCase();
+      const region = document.getElementById('regionFilter').value;
+
+      const results = allCountries.filter(c => {
+        const matchesName = c.name.common.toLowerCase().includes(search);
+        const matchesRegion = !region || c.region === region;
+        return matchesName && matchesRegion;
+      });
+
+      const countEl = document.getElementById('resultCount');
+      countEl.textContent = `Showing ${results.length} countries`;
+      countEl.classList.remove('hidden');
+
+      renderCards(results);
+    }
+
     async function init() {
       initDarkMode();
       showLoading();
       try {
         allCountries = await fetchAllCountries();
         renderCards(allCountries);
+        document.getElementById('searchInput').addEventListener('input', debounce(applyFilters, 350));
+        document.getElementById('regionFilter').addEventListener('change', applyFilters);
       } catch (err) {
         showError('Failed to load countries. Check your connection.');
       }
