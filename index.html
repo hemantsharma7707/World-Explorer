@@ -14,6 +14,62 @@
 
   <!-- Tailwind Custom Config -->
   <script>
+    // ======================================
+    // 1. GLOBAL VARIABLES
+    // ======================================
+    let allCountries = [];
+
+    // ======================================
+    // 2. API FUNCTIONS (async/await + try/catch)
+    // ======================================
+    const PRIMARY_API = 'https://pw-d20261017a29.plainwork-apps.workers.dev/v3.1';
+    const FALLBACK_API = 'https://restcountries.com/v3.1';
+
+    async function apiRequest(path) {
+      try {
+        const res = await fetch(`${PRIMARY_API}${path}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } catch (primaryErr) {
+        console.warn('Primary API unavailable, attempting fallback...', primaryErr);
+        const res = await fetch(`${FALLBACK_API}${path}`);
+        if (!res.ok) throw new Error(`Fallback HTTP ${res.status}`);
+        return await res.json();
+      }
+    }
+
+    // Fetch all countries
+    async function fetchAllCountries() {
+      try {
+        return await apiRequest('/all?fields=name,capital,population,region,subregion,flags,cca3,area');
+      } catch (err) {
+        console.error('Fetch all failed:', err);
+        throw err;
+      }
+    }
+
+    // Fetch one country by code (for detail page)
+    async function fetchCountryByCode(code) {
+      try {
+        const data = await apiRequest(`/alpha/${code}`);
+        return Array.isArray(data) ? data[0] : data;
+      } catch (err) {
+        console.error('Fetch country failed:', err);
+        throw err;
+      }
+    }
+
+    // Fetch multiple countries by codes (for border names)
+    async function fetchBorderCountries(codes) {
+      if (!codes || codes.length === 0) return [];
+      try {
+        return await apiRequest(`/alpha?codes=${codes.join(',')}&fields=name,cca3,flags`);
+      } catch (err) {
+        console.error('Fetch borders failed:', err);
+        throw err;
+      }
+    }
+
     tailwind.config = {
       darkMode: 'class',
       theme: {
