@@ -266,6 +266,53 @@
 
 
     // ======================================
+    // 4. LOCALSTORAGE — FAVORITES
+    // ======================================
+
+    const FAV_KEY = 'worldExplorer_favorites';
+
+    // Get favorites array from localStorage
+    function getFavorites() {
+      return JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
+    }
+
+    // Save favorites array to localStorage
+    function saveFavorites(favs) {
+      localStorage.setItem(FAV_KEY, JSON.stringify(favs));
+    }
+
+    // Check if a country is favorited
+    function isFav(code) {
+      return getFavorites().includes(code);
+    }
+
+    // Toggle favorite — add if not present, remove if present
+    function toggleFav(code) {
+      let favs = getFavorites();
+      if (favs.includes(code)) {
+        favs = favs.filter(f => f !== code);  // Array.filter() to remove
+      } else {
+        favs.push(code);
+      }
+      saveFavorites(favs);
+      updateFavBadge();
+      return favs.includes(code);
+    }
+
+    // Update the favorites count badge in navbar
+    function updateFavBadge() {
+      const count = getFavorites().length;
+      const badge = document.getElementById('favCount');
+      if (count > 0) {
+        badge.textContent = count;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+
+    // ======================================
     // 5. SHOW / HIDE VIEWS
     // ======================================
 
@@ -351,7 +398,16 @@
       img.loading = 'lazy';
 
       // Favorite heart button (overlaid on flag)
-      
+      const heartBtn = document.createElement('button');
+      heartBtn.className = 'fav-btn absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80 dark:bg-gray-800/80 flex items-center justify-center text-lg shadow hover:scale-110 transition-transform';
+      heartBtn.dataset.code = country.cca3;
+      heartBtn.textContent = isFav(country.cca3) ? '❤️' : '🤍';
+
+      // Wrap flag + heart in relative container
+      const flagWrap = document.createElement('div');
+      flagWrap.className = 'relative';
+      flagWrap.appendChild(img);
+      flagWrap.appendChild(heartBtn);
 
       // Info section
       const info = document.createElement('div');
@@ -617,6 +673,63 @@
 
 
     // ======================================
+    // 11. FAVORITES VIEW
+    // ======================================
+
+    function openFavorites() {
+      showView('favoritesView');
+      const view = document.getElementById('favoritesView');
+      view.innerHTML = '';
+
+      // Back button
+      const backBtn = document.createElement('button');
+      backBtn.className = 'inline-flex items-center gap-2 px-5 py-2 mb-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-medium shadow-sm hover:shadow-md transition-shadow';
+      backBtn.textContent = '← Back';
+      backBtn.addEventListener('click', () => { showView('browseView'); applyFilters(); });
+      view.appendChild(backBtn);
+
+      const title = document.createElement('h2');
+      title.className = 'text-2xl font-bold mb-6';
+      title.textContent = '❤️ Your Favorites';
+      view.appendChild(title);
+
+      // Get favorite countries using Array.find()
+      const favCodes = getFavorites();
+      const favCountries = favCodes
+        .map(code => allCountries.find(c => c.cca3 === code))  // Array.find()
+        .filter(Boolean);  // remove any undefined
+
+      if (favCountries.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'text-center py-20';
+        empty.innerHTML = '<p class="text-6xl mb-4">💔</p><h3 class="text-lg font-semibold mb-2">No favorites yet</h3><p class="text-gray-500">Click the heart on any country card to save it.</p>';
+        view.appendChild(empty);
+        return;
+      }
+
+      // Grid of favorite cards
+      const grid = document.createElement('div');
+      grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5';
+
+      favCountries.forEach(c => grid.appendChild(createCard(c)));
+      view.appendChild(grid);
+
+      // Event delegation on favorites grid
+      grid.addEventListener('click', (e) => {
+        const favBtn = e.target.closest('.fav-btn');
+        if (favBtn) {
+          e.stopPropagation();
+          toggleFav(favBtn.dataset.code);
+          openFavorites(); // re-render
+          return;
+        }
+        const card = e.target.closest('.country-card');
+        if (card) openDetail(card.dataset.code);
+      });
+    }
+
+
+    // ======================================
     // 13. DARK MODE
     // ======================================
 
@@ -711,6 +824,7 @@
       });
 
       // Nav buttons
+      document.getElementById('favoritesBtn').addEventListener('click', openFavorites);
       
       document.getElementById('darkModeBtn').addEventListener('click', toggleDarkMode);
     }
