@@ -144,6 +144,17 @@
           <option value="Europe">Europe</option>
           <option value="Oceania">Oceania</option>
         </select>
+
+        <select id="sortSelect"
+          class="px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm cursor-pointer min-w-[180px]">
+          <option value="">Default Order</option>
+          <option value="name-asc">Name (A → Z)</option>
+          <option value="name-desc">Name (Z → A)</option>
+          <option value="pop-high">Population (High → Low)</option>
+          <option value="pop-low">Population (Low → High)</option>
+          <option value="area-high">Area (Largest first)</option>
+          <option value="area-low">Area (Smallest first)</option>
+        </select>
       </div>
 
       <!-- Result Count -->
@@ -298,11 +309,25 @@
       const search = document.getElementById('searchInput').value.trim().toLowerCase();
       const region = document.getElementById('regionFilter').value;
 
-      const results = allCountries.filter(c => {
+      const sortBy = document.getElementById('sortSelect').value;
+
+      let results = allCountries.filter(c => {
         const matchesName = c.name.common.toLowerCase().includes(search);
         const matchesRegion = !region || c.region === region;
         return matchesName && matchesRegion;
       });
+
+      if (sortBy) {
+        results.sort((a, b) => {
+          if (sortBy === 'name-asc') return a.name.common.localeCompare(b.name.common);
+          if (sortBy === 'name-desc') return b.name.common.localeCompare(a.name.common);
+          if (sortBy === 'pop-high') return b.population - a.population;
+          if (sortBy === 'pop-low') return a.population - b.population;
+          if (sortBy === 'area-high') return (b.area || 0) - (a.area || 0);
+          if (sortBy === 'area-low') return (a.area || 0) - (b.area || 0);
+          return 0;
+        });
+      }
 
       const countEl = document.getElementById('resultCount');
       countEl.textContent = `Showing ${results.length} countries`;
@@ -319,6 +344,7 @@
         renderCards(allCountries);
         document.getElementById('searchInput').addEventListener('input', debounce(applyFilters, 350));
         document.getElementById('regionFilter').addEventListener('change', applyFilters);
+        document.getElementById('sortSelect').addEventListener('change', applyFilters);
       } catch (err) {
         showError('Failed to load countries. Check your connection.');
       }
