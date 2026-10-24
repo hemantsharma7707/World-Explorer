@@ -12,6 +12,18 @@
   <!-- Google Font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+  <!-- Tailwind Custom Config -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+
   <style>
     /* Skeleton loading shimmer effect */
     .skeleton {
@@ -28,21 +40,166 @@
       0% { background-position: 200% 0; }
       100% { background-position: -200% 0; }
     }
-  </style>
 
-  <!-- Tailwind Custom Config -->
+    /* Flag image consistent size */
+    .flag-img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+    }
+
+    /* Card hover lift */
+    .country-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+    }
+
+    /* Custom select arrow */
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 36px;
+    }
+
+    /* VS badge between compare cards */
+    .vs-badge {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: 14px;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans min-h-screen transition-colors duration-300">
+
+  <!-- ==================== NAVBAR ==================== -->
+  <header class="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+
+      <!-- Logo -->
+      <a href="#" id="logo" class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+          <span class="text-white text-xl">🌍</span>
+        </div>
+        <h1 class="text-xl font-extrabold text-indigo-600">World Explorer</h1>
+      </a>
+
+      <!-- Nav Buttons -->
+      <div class="flex items-center gap-2">
+        <button id="favoritesBtn" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
+          ❤️ <span class="hidden sm:inline">Favorites</span>
+          <span id="favCount" class="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-xs rounded-full hidden">0</span>
+        </button>
+        <button id="compareBtn" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
+          ⚖️ <span class="hidden sm:inline">Compare</span>
+        </button>
+        <button id="darkModeBtn" class="w-10 h-10 rounded-lg flex items-center justify-center text-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          🌙
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="max-w-7xl mx-auto px-4 py-6">
+
+    <!-- ========== BROWSE VIEW ========== -->
+    <section id="browseView">
+
+      <!-- Search, Filter, Sort Controls -->
+      <div class="flex flex-col sm:flex-row gap-3 mb-6">
+        <!-- Search -->
+        <input type="text" id="searchInput" placeholder="🔍 Search countries..."
+          class="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+
+        <!-- Region Filter -->
+        <select id="regionFilter"
+          class="px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm appearance-none cursor-pointer min-w-[150px]">
+          <option value="">All Regions</option>
+          <option value="Africa">Africa</option>
+          <option value="Americas">Americas</option>
+          <option value="Asia">Asia</option>
+          <option value="Europe">Europe</option>
+          <option value="Oceania">Oceania</option>
+        </select>
+
+        <!-- Sort -->
+        <select id="sortSelect"
+          class="px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm appearance-none cursor-pointer min-w-[180px]">
+          <option value="">Default Order</option>
+          <option value="name-asc">Name (A → Z)</option>
+          <option value="name-desc">Name (Z → A)</option>
+          <option value="pop-high">Population (High → Low)</option>
+          <option value="pop-low">Population (Low → High)</option>
+          <option value="area-high">Area (Largest first)</option>
+          <option value="area-low">Area (Smallest first)</option>
+        </select>
+      </div>
+
+      <!-- Result Count -->
+      <p id="resultCount" class="text-sm text-gray-500 mb-4 hidden"></p>
+
+      <!-- Loading Skeletons -->
+      <div id="loadingDiv" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 hidden"></div>
+
+      <!-- Error Message -->
+      <div id="errorDiv" class="text-center py-20 hidden">
+        <p class="text-6xl mb-4">😵</p>
+        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">Something went wrong</h2>
+        <p id="errorMsg" class="text-gray-500 mb-6">Failed to load countries.</p>
+        <button id="retryBtn" class="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium">Try Again</button>
+      </div>
+
+      <!-- Empty State (no results) -->
+      <div id="emptyDiv" class="text-center py-20 hidden">
+        <p class="text-6xl mb-4">🔍</p>
+        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">No countries found</h2>
+        <p class="text-gray-500">Try a different search or filter.</p>
+      </div>
+
+      <!-- Countries Grid (cards inserted here by JS) -->
+      <div id="countriesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"></div>
+    </section>
+
+    <!-- ========== DETAIL VIEW ========== -->
+    <section id="detailView" class="hidden"></section>
+
+    <!-- ========== FAVORITES VIEW ========== -->
+    <section id="favoritesView" class="hidden"></section>
+
+    <!-- ========== COMPARE VIEW ========== -->
+    <section id="compareView" class="hidden"></section>
+
+  </main>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="border-t border-gray-200 dark:border-gray-800 mt-12 py-6 text-center text-sm text-gray-400">
+    Built with ❤️ using <a href="https://restcountries.com/" target="_blank" class="text-indigo-500 hover:underline">REST Countries API</a> • World Explorer © 2026
+  </footer>
+
+
+  <!-- ==================== JAVASCRIPT ==================== -->
   <script>
+
     // ======================================
     // 1. GLOBAL VARIABLES
     // ======================================
-    let allCountries = [];
+    let allCountries = [];  // stores all 250 countries after first load
+
 
     // ======================================
     // 2. API FUNCTIONS (async/await + try/catch)
     // ======================================
+
+    // Primary active mirror and fallback endpoint
     const PRIMARY_API = 'https://pw-d20261017a29.plainwork-apps.workers.dev/v3.1';
     const FALLBACK_API = 'https://restcountries.com/v3.1';
 
+    // Helper to make API requests with automatic fallback
     async function apiRequest(path) {
       try {
         const res = await fetch(`${PRIMARY_API}${path}`);
@@ -88,123 +245,47 @@
       }
     }
 
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'sans-serif'] },
-        }
-      }
-    }
-  </script>
-</head>
-<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans min-h-screen transition-colors duration-300">
 
-  <!-- ==================== NAVBAR ==================== -->
-  <header class="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-      <!-- Logo -->
-      <a href="#" id="logo" class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
-          <span class="text-white text-xl">🌍</span>
-        </div>
-        <h1 class="text-xl font-extrabold text-indigo-600">World Explorer</h1>
-      </a>
+    // ======================================
+    // 3. UTILITY FUNCTIONS
+    // ======================================
 
-      <!-- Nav Buttons -->
-      <div class="flex items-center gap-2">
-        <button id="favoritesBtn" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
-          ❤️ <span class="hidden sm:inline">Favorites</span>
-          <span id="favCount" class="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-xs rounded-full hidden">0</span>
-        </button>
-        <button id="compareBtn" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
-          ⚖️ <span class="hidden sm:inline">Compare</span>
-        </button>
-        <button id="darkModeBtn" class="w-10 h-10 rounded-lg flex items-center justify-center text-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-          🌙
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- ==================== MAIN CONTENT ==================== -->
-  <main class="max-w-7xl mx-auto px-4 py-6">
-    <section id="browseView">
-      <!-- Search & Filter Controls -->
-      <div class="flex flex-col sm:flex-row gap-3 mb-6">
-        <input type="text" id="searchInput" placeholder="🔍 Search countries..."
-          class="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-
-        <select id="regionFilter"
-          class="px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm cursor-pointer min-w-[150px]">
-          <option value="">All Regions</option>
-          <option value="Africa">Africa</option>
-          <option value="Americas">Americas</option>
-          <option value="Asia">Asia</option>
-          <option value="Europe">Europe</option>
-          <option value="Oceania">Oceania</option>
-        </select>
-
-        <select id="sortSelect"
-          class="px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm cursor-pointer min-w-[180px]">
-          <option value="">Default Order</option>
-          <option value="name-asc">Name (A → Z)</option>
-          <option value="name-desc">Name (Z → A)</option>
-          <option value="pop-high">Population (High → Low)</option>
-          <option value="pop-low">Population (Low → High)</option>
-          <option value="area-high">Area (Largest first)</option>
-          <option value="area-low">Area (Smallest first)</option>
-        </select>
-      </div>
-
-      <!-- Result Count -->
-      <p id="resultCount" class="text-sm text-gray-500 mb-4 hidden"></p>
-
-      <!-- Loading Skeletons -->
-      <div id="loadingDiv" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 hidden"></div>
-
-      <!-- Error Message -->
-      <div id="errorDiv" class="text-center py-20 hidden">
-        <p class="text-6xl mb-4">😵</p>
-        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">Something went wrong</h2>
-        <p id="errorMsg" class="text-gray-500 mb-6">Failed to load countries.</p>
-        <button id="retryBtn" class="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium">Try Again</button>
-      </div>
-
-      <!-- Empty State (no results) -->
-      <div id="emptyDiv" class="text-center py-20 hidden">
-        <p class="text-6xl mb-4">🔍</p>
-        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">No countries found</h2>
-        <p class="text-gray-500">Try a different search or filter.</p>
-      </div>
-
-      <!-- Countries Grid -->
-      <div id="countriesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"></div>
-    </section>
-  </main>
-
-  <!-- ==================== FOOTER ==================== -->
-  <footer class="border-t border-gray-200 dark:border-gray-800 mt-12 py-6 text-center text-sm text-gray-400">
-    Built with ❤️ using <a href="https://restcountries.com/" target="_blank" class="text-indigo-500 hover:underline">REST Countries API</a> • World Explorer © 2026
-  </footer>
-
-  <script>
-    function initDarkMode() {
-      const saved = localStorage.getItem('darkMode');
-      if (saved === 'true') {
-        document.documentElement.classList.add('dark');
-        document.getElementById('darkModeBtn').textContent = '☀️';
-      }
+    // Format number with commas: 1000000 → "1,000,000"
+    function formatNum(n) {
+      return n != null ? n.toLocaleString('en-US') : 'N/A';
     }
 
-    function toggleDarkMode() {
-      const isDark = document.documentElement.classList.toggle('dark');
-      localStorage.setItem('darkMode', isDark);
-      document.getElementById('darkModeBtn').textContent = isDark ? '☀️' : '🌙';
+    // Debounce — delays function call until user stops typing
+    function debounce(fn, delay) {
+      let timer;
+      return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
     }
 
-    document.getElementById('darkModeBtn').addEventListener('click', toggleDarkMode);
-    // UI State helpers
+
+    // ======================================
+    // 5. SHOW / HIDE VIEWS
+    // ======================================
+
+    function showView(name) {
+      // Hide all views
+      document.getElementById('browseView').classList.add('hidden');
+      document.getElementById('detailView').classList.add('hidden');
+      document.getElementById('favoritesView').classList.add('hidden');
+      document.getElementById('compareView').classList.add('hidden');
+
+      // Show the requested view
+      document.getElementById(name).classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+
+    // ======================================
+    // 6. LOADING / ERROR / EMPTY STATES
+    // ======================================
+
     function showLoading() {
       const div = document.getElementById('loadingDiv');
       div.innerHTML = '';
@@ -212,11 +293,19 @@
       document.getElementById('countriesGrid').classList.add('hidden');
       document.getElementById('errorDiv').classList.add('hidden');
       document.getElementById('emptyDiv').classList.add('hidden');
+      document.getElementById('resultCount').classList.add('hidden');
 
+      // Create 12 skeleton cards
       for (let i = 0; i < 12; i++) {
         const card = document.createElement('div');
         card.className = 'rounded-2xl overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700';
-        card.innerHTML = '<div class="skeleton h-40 w-full" style="border-radius:0"></div><div class="p-4 space-y-3"><div class="skeleton h-5 w-3/4"></div><div class="skeleton h-4 w-1/2"></div><div class="skeleton h-4 w-2/3"></div></div>';
+        card.innerHTML = `
+          <div class="skeleton h-40 w-full" style="border-radius:0"></div>
+          <div class="p-4 space-y-3">
+            <div class="skeleton h-5 w-3/4"></div>
+            <div class="skeleton h-4 w-1/2"></div>
+            <div class="skeleton h-4 w-2/3"></div>
+          </div>`;
         div.appendChild(card);
       }
     }
@@ -236,21 +325,35 @@
       document.getElementById('emptyDiv').classList.remove('hidden');
     }
 
-    function formatNum(n) {
-      return n != null ? n.toLocaleString('en-US') : 'N/A';
+    function showGrid() {
+      document.getElementById('loadingDiv').classList.add('hidden');
+      document.getElementById('errorDiv').classList.add('hidden');
+      document.getElementById('emptyDiv').classList.add('hidden');
+      document.getElementById('countriesGrid').classList.remove('hidden');
     }
 
+
+    // ======================================
+    // 7. CREATE COUNTRY CARD (DOM methods)
+    // ======================================
+
     function createCard(country) {
+      // Create card element
       const card = document.createElement('div');
-      card.className = 'country-card rounded-2xl overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1';
+      card.className = 'country-card rounded-2xl overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 cursor-pointer transition-all duration-300';
       card.dataset.code = country.cca3;
 
+      // Flag image
       const img = document.createElement('img');
-      img.className = 'w-full h-40 object-cover';
+      img.className = 'flag-img';
       img.src = country.flags?.png || '';
       img.alt = `Flag of ${country.name.common}`;
       img.loading = 'lazy';
 
+      // Favorite heart button (overlaid on flag)
+      
+
+      // Info section
       const info = document.createElement('div');
       info.className = 'p-4';
 
@@ -258,6 +361,7 @@
       name.className = 'font-bold text-base mb-2 truncate';
       name.textContent = country.name.common;
 
+      // Population, Capital, Region — built with DOM methods
       const pop = document.createElement('p');
       pop.className = 'text-sm text-gray-500 dark:text-gray-400';
       pop.innerHTML = `<span class="font-semibold text-gray-700 dark:text-gray-300">Population:</span> ${formatNum(country.population)}`;
@@ -275,48 +379,59 @@
       info.appendChild(cap);
       info.appendChild(reg);
 
-      card.appendChild(img);
+      card.appendChild(flagWrap);
       card.appendChild(info);
+
       return card;
     }
+
+
+    // ======================================
+    // 8. RENDER CARDS INTO GRID
+    // ======================================
 
     function renderCards(countries) {
       const grid = document.getElementById('countriesGrid');
       grid.innerHTML = '';
+
       if (countries.length === 0) {
         showEmpty();
         return;
       }
-      document.getElementById('loadingDiv').classList.add('hidden');
-      document.getElementById('errorDiv').classList.add('hidden');
-      document.getElementById('emptyDiv').classList.add('hidden');
-      grid.classList.remove('hidden');
 
+      showGrid();
+
+      // DocumentFragment for better performance with 250+ countries
       const fragment = document.createDocumentFragment();
-      countries.forEach(c => fragment.appendChild(createCard(c)));
+      countries.forEach(country => {
+        fragment.appendChild(createCard(country));
+      });
       grid.appendChild(fragment);
+
+      // Show result count
+      const countEl = document.getElementById('resultCount');
+      countEl.textContent = `Showing ${countries.length} countries`;
+      countEl.classList.remove('hidden');
     }
 
-    function debounce(fn, delay) {
-      let timer;
-      return function (...args) {
-        clearTimeout(timer);
-        timer = setTimeout(() => fn(...args), delay);
-      };
-    }
+
+    // ======================================
+    // 9. FILTER & SORT (uses Array.filter + Array.sort)
+    // ======================================
 
     function applyFilters() {
       const search = document.getElementById('searchInput').value.trim().toLowerCase();
       const region = document.getElementById('regionFilter').value;
-
       const sortBy = document.getElementById('sortSelect').value;
 
+      // FILTER — Array.filter()
       let results = allCountries.filter(c => {
         const matchesName = c.name.common.toLowerCase().includes(search);
         const matchesRegion = !region || c.region === region;
         return matchesName && matchesRegion;
       });
 
+      // SORT — Array.sort()
       if (sortBy) {
         results.sort((a, b) => {
           if (sortBy === 'name-asc') return a.name.common.localeCompare(b.name.common);
@@ -329,28 +444,280 @@
         });
       }
 
-      const countEl = document.getElementById('resultCount');
-      countEl.textContent = `Showing ${results.length} countries`;
-      countEl.classList.remove('hidden');
-
       renderCards(results);
     }
 
-    async function init() {
-      initDarkMode();
-      showLoading();
+
+    // ======================================
+    // 10. DETAIL VIEW
+    // ======================================
+
+    async function openDetail(code) {
+      showView('detailView');
+      const view = document.getElementById('detailView');
+
+      // Show loading skeleton while fetching
+      view.innerHTML = `
+        <div class="space-y-6">
+          <div class="skeleton h-10 w-20"></div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="skeleton h-64 rounded-2xl"></div>
+            <div class="space-y-3">
+              <div class="skeleton h-8 w-3/4"></div>
+              <div class="skeleton h-4 w-1/2"></div>
+              <div class="skeleton h-4 w-2/3"></div>
+              <div class="skeleton h-4 w-1/2"></div>
+              <div class="skeleton h-4 w-1/3"></div>
+            </div>
+          </div>
+        </div>`;
+
       try {
-        allCountries = await fetchAllCountries();
-        renderCards(allCountries);
-        document.getElementById('searchInput').addEventListener('input', debounce(applyFilters, 350));
-        document.getElementById('regionFilter').addEventListener('change', applyFilters);
-        document.getElementById('sortSelect').addEventListener('change', applyFilters);
+        // Fetch full country details
+        const country = await fetchCountryByCode(code);
+
+        // Fetch border country names
+        let borders = [];
+        if (country.borders && country.borders.length > 0) {
+          borders = await fetchBorderCountries(country.borders);
+        }
+
+        // Extract data
+        const name = country.name.common;
+        const official = country.name.official;
+        const nativeName = country.name.nativeName ? Object.values(country.name.nativeName)[0]?.common : name;
+        const population = formatNum(country.population);
+        const area = country.area ? `${formatNum(country.area)} km²` : 'N/A';
+        const region = country.region || 'N/A';
+        const subregion = country.subregion || 'N/A';
+        const capital = country.capital?.[0] || 'N/A';
+        const tld = country.tld?.join(', ') || 'N/A';
+        const currencies = country.currencies ? Object.values(country.currencies).map(c => `${c.name} (${c.symbol || ''})`).join(', ') : 'N/A';
+        const languages = country.languages ? Object.values(country.languages).join(', ') : 'N/A';
+        const mapLink = country.maps?.googleMaps || '#';
+        const flagUrl = country.flags?.png || '';
+        const flagAlt = country.flags?.alt || `Flag of ${name}`;
+
+        // Build detail page
+        view.innerHTML = '';
+
+        // Back button
+        const backBtn = document.createElement('button');
+        backBtn.className = 'inline-flex items-center gap-2 px-5 py-2 mb-8 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-medium shadow-sm hover:shadow-md transition-shadow';
+        backBtn.textContent = '← Back';
+        backBtn.addEventListener('click', () => {
+          showView('browseView');
+          applyFilters();
+        });
+        view.appendChild(backBtn);
+
+        // Two column grid
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-10';
+
+        // Left — Flag
+        const flagImg = document.createElement('img');
+        flagImg.src = flagUrl;
+        flagImg.alt = flagAlt;
+        flagImg.className = 'w-full max-h-[300px] object-cover rounded-2xl shadow-xl';
+        grid.appendChild(flagImg);
+
+        // Right — Info
+        const infoDiv = document.createElement('div');
+
+        // Title + Favorite
+        const titleRow = document.createElement('div');
+        titleRow.className = 'flex items-start justify-between mb-6';
+
+        const titleDiv = document.createElement('div');
+        titleDiv.innerHTML = `<h2 class="text-3xl font-extrabold mb-1">${name}</h2><p class="text-sm text-gray-500 italic">${official}</p>`;
+        titleRow.appendChild(titleDiv);
+
+        const favBtn = document.createElement('button');
+        favBtn.className = 'text-2xl hover:scale-110 transition-transform';
+        favBtn.textContent = isFav(code) ? '❤️' : '🤍';
+        favBtn.addEventListener('click', () => {
+          const nowFav = toggleFav(code);
+          favBtn.textContent = nowFav ? '❤️' : '🤍';
+        });
+        titleRow.appendChild(favBtn);
+        infoDiv.appendChild(titleRow);
+
+        // Info items in 2 columns
+        const infoGrid = document.createElement('div');
+        infoGrid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mb-6';
+
+        const infoItems = [
+          ['Native Name', nativeName],
+          ['Population', population],
+          ['Region', region],
+          ['Sub Region', subregion],
+          ['Capital', capital],
+          ['Area', area],
+          ['Top Level Domain', tld],
+          ['Currencies', currencies],
+          ['Languages', languages],
+        ];
+
+        // Array.forEach to render info items
+        infoItems.forEach(([label, value]) => {
+          const p = document.createElement('p');
+          p.className = 'text-sm';
+          p.innerHTML = `<span class="font-semibold">${label}:</span> <span class="text-gray-500 dark:text-gray-400">${value}</span>`;
+          infoGrid.appendChild(p);
+        });
+        infoDiv.appendChild(infoGrid);
+
+        // Google Maps link
+        const mapA = document.createElement('a');
+        mapA.href = mapLink;
+        mapA.target = '_blank';
+        mapA.className = 'inline-block px-5 py-2 mb-6 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors shadow-md';
+        mapA.textContent = '📍 View on Google Maps';
+        infoDiv.appendChild(mapA);
+
+        // Border countries — clickable chips
+        if (borders.length > 0) {
+          const borderDiv = document.createElement('div');
+          const borderTitle = document.createElement('h3');
+          borderTitle.className = 'font-semibold text-sm mb-3';
+          borderTitle.textContent = 'Border Countries:';
+          borderDiv.appendChild(borderTitle);
+
+          const chipsDiv = document.createElement('div');
+          chipsDiv.className = 'flex flex-wrap gap-2';
+
+          // Each border country is a clickable chip
+          borders.forEach(b => {
+            const chip = document.createElement('button');
+            chip.className = 'px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:text-indigo-600 border border-gray-200 dark:border-gray-600 transition-colors';
+            chip.textContent = b.name.common;
+            // Click → jump to that country's detail
+            chip.addEventListener('click', () => openDetail(b.cca3));
+            chipsDiv.appendChild(chip);
+          });
+
+          borderDiv.appendChild(chipsDiv);
+          infoDiv.appendChild(borderDiv);
+        }
+
+        grid.appendChild(infoDiv);
+        view.appendChild(grid);
+
       } catch (err) {
-        showError('Failed to load countries. Check your connection.');
+        view.innerHTML = `
+          <div class="text-center py-20">
+            <p class="text-6xl mb-4">😵</p>
+            <h2 class="text-xl font-bold mb-2">Failed to load country</h2>
+            <p class="text-gray-500 mb-6">Please try again.</p>
+            <button onclick="showView('browseView')" class="px-6 py-2 bg-indigo-600 text-white rounded-xl">Go Back</button>
+          </div>`;
       }
     }
 
+
+    // ======================================
+    // 13. DARK MODE
+    // ======================================
+
+    function initDarkMode() {
+      const saved = localStorage.getItem('darkMode');
+      if (saved === 'true') {
+        document.documentElement.classList.add('dark');
+        document.getElementById('darkModeBtn').textContent = '☀️';
+      }
+    }
+
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('darkMode', isDark);
+      document.getElementById('darkModeBtn').textContent = isDark ? '☀️' : '🌙';
+    }
+
+
+    // ======================================
+    // 14. INITIALIZE APP
+    // ======================================
+
+    async function init() {
+      // Setup dark mode
+      initDarkMode();
+      updateFavBadge();
+
+      // Show browse view with loading
+      showView('browseView');
+      showLoading();
+
+      // Fetch all countries on page load
+      try {
+        allCountries = await fetchAllCountries();
+        renderCards(allCountries);
+      } catch (err) {
+        showError('Failed to load countries. Check your internet connection.');
+        return;
+      }
+
+      // ----- EVENT LISTENERS -----
+
+      // EVENT DELEGATION on countries grid
+      // One listener on the parent, not 250 on each card
+      document.getElementById('countriesGrid').addEventListener('click', (e) => {
+        // Did they click a favorite button?
+        const favBtn = e.target.closest('.fav-btn');
+        if (favBtn) {
+          e.stopPropagation();
+          const nowFav = toggleFav(favBtn.dataset.code);
+          favBtn.textContent = nowFav ? '❤️' : '🤍';
+          return;
+        }
+        // Did they click a country card?
+        const card = e.target.closest('.country-card');
+        if (card) {
+          openDetail(card.dataset.code);
+        }
+      });
+
+      // Search — debounced (waits 350ms after user stops typing)
+      document.getElementById('searchInput').addEventListener(
+        'input',
+        debounce(applyFilters, 350)
+      );
+
+      // Region filter
+      document.getElementById('regionFilter').addEventListener('change', applyFilters);
+
+      // Sort
+      document.getElementById('sortSelect').addEventListener('change', applyFilters);
+
+      // Retry button (user-triggered fetch)
+      document.getElementById('retryBtn').addEventListener('click', async () => {
+        showLoading();
+        try {
+          allCountries = await fetchAllCountries();
+          renderCards(allCountries);
+        } catch (err) {
+          showError('Still unable to load. Please try again later.');
+        }
+      });
+
+      // Logo → go home
+      document.getElementById('logo').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('searchInput').value = '';
+        document.getElementById('regionFilter').value = '';
+        document.getElementById('sortSelect').value = '';
+        showView('browseView');
+        renderCards(allCountries);
+      });
+
+      // Nav buttons
+      
+      document.getElementById('darkModeBtn').addEventListener('click', toggleDarkMode);
+    }
+
+    // Start the app when page loads
     document.addEventListener('DOMContentLoaded', init);
+
   </script>
 </body>
 </html>
