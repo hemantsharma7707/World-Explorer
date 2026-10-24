@@ -6,7 +6,7 @@ A modern, responsive country discovery web application built with **Vanilla Java
 
 ## 🚀 Live Demo & Repository
 - **Live URL:** [World-Explorer](https://world-explorer-ebon-two.vercel.app/)
-- **GitHub Repository:** [https://github.com/hemantsharma7707/World-Explorer](https://github.com/hemantsharma7707)
+- **GitHub Repository:** [GitHub Repo](https://github.com/hemantsharma7707/World-Explorer)
 
 ---
 
