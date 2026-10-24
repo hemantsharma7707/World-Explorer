@@ -12,6 +12,24 @@
   <!-- Google Font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+  <style>
+    /* Skeleton loading shimmer effect */
+    .skeleton {
+      background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+    .dark .skeleton {
+      background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+      background-size: 200% 100%;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+  </style>
+
   <!-- Tailwind Custom Config -->
   <script>
     // ======================================
@@ -112,9 +130,26 @@
   <!-- ==================== MAIN CONTENT ==================== -->
   <main class="max-w-7xl mx-auto px-4 py-6">
     <section id="browseView">
-      <div class="text-center py-12 text-gray-500">
-        Browse view initialized.
+      <!-- Loading Skeletons -->
+      <div id="loadingDiv" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 hidden"></div>
+
+      <!-- Error Message -->
+      <div id="errorDiv" class="text-center py-20 hidden">
+        <p class="text-6xl mb-4">😵</p>
+        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">Something went wrong</h2>
+        <p id="errorMsg" class="text-gray-500 mb-6">Failed to load countries.</p>
+        <button id="retryBtn" class="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium">Try Again</button>
       </div>
+
+      <!-- Empty State (no results) -->
+      <div id="emptyDiv" class="text-center py-20 hidden">
+        <p class="text-6xl mb-4">🔍</p>
+        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">No countries found</h2>
+        <p class="text-gray-500">Try a different search or filter.</p>
+      </div>
+
+      <!-- Countries Grid -->
+      <div id="countriesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"></div>
     </section>
   </main>
 
@@ -139,6 +174,38 @@
     }
 
     document.getElementById('darkModeBtn').addEventListener('click', toggleDarkMode);
+    // UI State helpers
+    function showLoading() {
+      const div = document.getElementById('loadingDiv');
+      div.innerHTML = '';
+      div.classList.remove('hidden');
+      document.getElementById('countriesGrid').classList.add('hidden');
+      document.getElementById('errorDiv').classList.add('hidden');
+      document.getElementById('emptyDiv').classList.add('hidden');
+
+      for (let i = 0; i < 12; i++) {
+        const card = document.createElement('div');
+        card.className = 'rounded-2xl overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700';
+        card.innerHTML = '<div class="skeleton h-40 w-full" style="border-radius:0"></div><div class="p-4 space-y-3"><div class="skeleton h-5 w-3/4"></div><div class="skeleton h-4 w-1/2"></div><div class="skeleton h-4 w-2/3"></div></div>';
+        div.appendChild(card);
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('loadingDiv').classList.add('hidden');
+      document.getElementById('countriesGrid').classList.add('hidden');
+      document.getElementById('emptyDiv').classList.add('hidden');
+      document.getElementById('errorMsg').textContent = msg;
+      document.getElementById('errorDiv').classList.remove('hidden');
+    }
+
+    function showEmpty() {
+      document.getElementById('loadingDiv').classList.add('hidden');
+      document.getElementById('countriesGrid').classList.add('hidden');
+      document.getElementById('errorDiv').classList.add('hidden');
+      document.getElementById('emptyDiv').classList.remove('hidden');
+    }
+
     document.addEventListener('DOMContentLoaded', initDarkMode);
   </script>
 </body>
