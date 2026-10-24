@@ -1,0 +1,16 @@
+{
+  "name": "world-explorer",
+  "version": "1.0.0",
+  "description": "Country discovery app using REST Countries API and Tailwind CSS",
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "rest-countries",
+    "tailwind",
+    "vanilla-js"
+  ],
+  "author": "Hemant Sharma",
+  "license": "MIT"
+}
